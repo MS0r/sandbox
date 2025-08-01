@@ -1,0 +1,9 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: erlang-box
+    ports:
+      - "4000:4000"
+    tty: true

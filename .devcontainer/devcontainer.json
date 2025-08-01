@@ -1,0 +1,33 @@
+{
+	"name": "Erlang-Application-Sandbox",
+
+	"dockerComposeFile": [
+		"../docker-compose.dev.yml"
+	],
+
+	"service": "app-dev",
+
+	"workspaceFolder": "/workspace",
+
+	"features": {
+        "ghcr.io/devcontainers/features/common-utils:2":{
+            "installZsh": "false",
+            "username": "vscode",
+            "userUid": "1000",
+            "userGid": "1000",
+            "upgradePackages": "true"
+        },
+		"ghcr.io/devcontainers/features/git:1": {},
+		"ghcr.io/devcontainers/features/github-cli:1": {}
+	},
+
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"jakebecker.elixir-ls",
+				"pgourlain.erlang"
+			]
+		}
+	},
+	"remoteUser": "vscode"
+}

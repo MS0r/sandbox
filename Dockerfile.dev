@@ -1,0 +1,8 @@
+FROM elixir:latest
+
+RUN apt-get update && apt install -y git vim make sudo &&\
+    apt clean && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+EXPOSE 4000
