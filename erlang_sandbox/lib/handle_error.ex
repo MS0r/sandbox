@@ -1,5 +1,5 @@
 defmodule ErlangSandbox.HandleError do
-  def to_string_response({:ok, msg}), do: "#{msg}\n"
+  def to_string_response({:ok, msg}), do: "#{msg}"
 
   def to_string_response({:error, {:unexpected_end_of_input, [{type,location} | _tail]}}) do
     "ERROR: unexpected end of input on line #{location} with value '#{type}' \n"
