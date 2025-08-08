@@ -31,8 +31,8 @@ defmodule ErlangSandbox.Server do
 
             {:ok, %{"op" => "test", "code" => code, "cases" => cases}} ->
               case run_tests(code, cases) do
-                {:ok, response} ->
-                  send_json(socket, %{status: "ok", result: to_string_response({:ok, response})})
+                {:ok, output, test_results} ->
+                  send_json(socket, %{status: "ok", result: to_string_response({:ok, output}), test_results: test_results})
                 {:error, reason} ->
                   send_json(socket, %{status: "error", reason: to_string_response({:error, reason})})
               end

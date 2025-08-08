@@ -27,7 +27,11 @@ defmodule ErlangSandbox.HandleError do
     end
   end
 
-  def to_string_response({:error, msg}) do
+  def to_string_response({:error, msg}) when is_binary(msg) do
+    "ERROR: #{msg}\n"
+  end
+
+  def to_string_response({:error, msg}) when is_list(msg) do
   # If msg is a list of charlists, convert and join
   str =
     msg
@@ -37,5 +41,9 @@ defmodule ErlangSandbox.HandleError do
     end)
     |> Enum.join(" ")
   "ERROR: #{str}\n"
+  end
+
+  def to_string_response({:error, msg}) do
+    "ERROR: #{inspect(msg)}\n"
   end
 end

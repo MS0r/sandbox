@@ -1,5 +1,5 @@
 defmodule ErlangSandbox.Erlang do
-    defmodule Parser do
+  defmodule Parser do
     def parse_all_forms(tokens), do: parse_forms(tokens, [])
 
     defp parse_forms([], acc), do: {:ok, Enum.reverse(acc)}
@@ -38,6 +38,7 @@ defmodule ErlangSandbox.Erlang do
 
   defmodule Loader do
     import ErlangSandbox.Erlang.Parser, only: [parse_all_forms: 1]
+
     def compile_and_load_erlang_module(source_code) do
       charlist = to_charlist(String.trim(source_code))
 
@@ -65,39 +66,65 @@ defmodule ErlangSandbox.Erlang do
       end
     end
 
-  def run_module({atom,module}) do
-    {:ok, io} = StringIO.open("")
-    owner = spawn(fn -> Process.sleep(:infinity) end)
-    Process.group_leader(owner, io)
+    def run_module({atom, module}) do
+      {:ok, io} = StringIO.open("")
+      previous_leader = Process.group_leader()
 
-    {pid, _spawns} =
-      spawn_monitor(fn ->
-        Process.group_leader(self(), io)
-        case atom do
-          :run -> apply(module, :start, [])
-          :test -> ExUnit.run()
-        end
-      end)
+      case atom do
+        :run ->
+          owner = spawn(fn -> Process.sleep(:infinity) end)
+          Process.group_leader(owner, io)
 
-    receive do
-      {:DOWN, _ref, :process, ^pid, _reason} -> :ok
-    after
-      500 -> :timeout
+          {pid, _spawns} =
+            spawn_monitor(fn ->
+              Process.group_leader(self(), io)
+              apply(module, :start, [])
+            end)
+
+          receive do
+            {:DOWN, _ref, :process, ^pid, reason} ->
+              case reason do
+                :normal ->
+                  :ok
+
+                {reason, stacktrace} ->
+                  msg = :erl_error.format_exception(:error, reason, stacktrace)
+                  raise RuntimeError, message: to_string(msg)
+
+                other ->
+                  raise RuntimeError, other
+              end
+          after
+            1000 -> raise RuntimeError, message: "TimeoutError: execution exceeded 1000ms"
+          end
+
+          Process.exit(owner, :kill)
+          Process.group_leader(self(), previous_leader)
+          StringIO.contents(io)
+
+        :test ->
+          Process.group_leader(self(), io)
+          test_results = ExUnit.run()
+
+          {_, output} = StringIO.contents(io)
+          Process.group_leader(self(), previous_leader)
+          {:ok, output, test_results}
+      end
     end
 
-    Process.exit(owner, :kill)
-    StringIO.contents(io)
-  end
+    def handle_erlang_code(source_code) do
+      case compile_and_load_erlang_module(source_code) do
+        {:ok, module} ->
+          try do
+            {_, output} = run_module({:run, module})
+            {:ok, output}
+          rescue
+            e in RuntimeError -> {:error, e.message}
+          end
 
-  def handle_erlang_code(source_code) do
-    case compile_and_load_erlang_module(source_code) do
-      {:ok, module} ->
-        {_,output} = run_module({:run,module})
-        {:ok, output}
-      {:error, reason} ->
-        {:error, reason}
+        {:error, reason} ->
+          {:error, reason}
+      end
     end
   end
-end
-
 end

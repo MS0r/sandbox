@@ -7,6 +7,6 @@ services:
     volumes:
       - .:/workspace:cached
     ports:
-      - "4080:4000"
+      - "5555:4000"
     command: /bin/sh -c "while sleep 1000; do :; done"
     tty: true
