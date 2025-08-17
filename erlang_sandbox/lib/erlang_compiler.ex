@@ -53,6 +53,9 @@ defmodule ErlangSandbox.Erlang do
 
           {:error, reason} ->
             {:error, reason}
+
+          :error ->
+              {:error, "Compilation failed: unknown error (possibly a semantic error such as unbound variable, type error, or similar). Please check your code."}
         end
       else
         {:error, reason, _} ->
@@ -92,10 +95,10 @@ defmodule ErlangSandbox.Erlang do
                   raise RuntimeError, message: to_string(msg)
 
                 other ->
-                  raise RuntimeError, other
+                  raise RuntimeError, message: inspect(other)
               end
           after
-            1000 -> raise RuntimeError, message: "TimeoutError: execution exceeded 1000ms"
+            5000 -> raise RuntimeError, message: "TimeoutError: execution exceeded 5000ms"
           end
 
           Process.exit(owner, :kill)

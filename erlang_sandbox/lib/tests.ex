@@ -4,6 +4,7 @@ defmodule ErlangSandbox.Tests do
   def run_tests(source_code, cases) do
     case compile_and_load_erlang_module(source_code) do
       {:ok, _module} ->
+        ExUnit.start()
         case Code.compile_string(cases) do
           [{mod, _bin} | _] ->
             try do
@@ -23,4 +24,3 @@ defmodule ErlangSandbox.Tests do
     end
   end
 end
-S
