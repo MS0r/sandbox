@@ -40,32 +40,31 @@ defmodule ErlangSandbox.Erlang do
     import ErlangSandbox.Erlang.Parser, only: [parse_all_forms: 1]
 
     def compile_and_load_erlang_module(source_code) do
-      charlist = to_charlist(String.trim(source_code))
+      charlist = source_code |> String.trim() |> to_charlist()
 
       with {:ok, tokens, _} <- :erl_scan.string(charlist),
-           {:ok, forms} <- parse_all_forms(tokens) do
-        case :compile.forms(forms, [:binary]) do
-          {:ok, module, binary} ->
-            case :code.load_binary(module, ~c'', binary) do
+          {:ok, forms} <- parse_all_forms(tokens) do
+        case :compile.forms(forms, [:binary, :return_errors, :return_warnings]) do
+          {:ok, module, binary, _warnings} ->
+            case :code.load_binary(module, ~c"", binary) do
               {:module, ^module} -> {:ok, module}
-              err -> {:error, err}
+              error -> {:error, error}
             end
+
+          {:error, [{[], errors}], _warnings} ->
+            {:error, errors}
 
           {:error, reason} ->
             {:error, reason}
 
           :error ->
-              {:error, "Compilation failed: unknown error (possibly a semantic error such as unbound variable, type error, or similar). Please check your code."}
+            {:error,
+            "Compilation failed: unknown error (possibly a semantic error such as unbound variable, type error, or similar). Please check your code."}
         end
       else
-        {:error, reason, _} ->
-          {:error, reason}
-
-        {:error, _} = err ->
-          err
-
-        other ->
-          {:error, other}
+        {:error, reason, _} -> {:error, reason}
+        {:error, _} = error -> error
+        other -> {:error, other}
       end
     end
 
@@ -101,6 +100,7 @@ defmodule ErlangSandbox.Erlang do
             5000 -> raise RuntimeError, message: "TimeoutError: execution exceeded 5000ms"
           end
 
+          Process.sleep(200)
           Process.exit(owner, :kill)
           Process.group_leader(self(), previous_leader)
           StringIO.contents(io)

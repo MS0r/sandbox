@@ -11,6 +11,16 @@ defmodule ErlangSandbox.Server do
     loop_acceptor(listen_socket)
   end
 
+  # Public helper for tests: start server on an ephemeral port and return port/listen_socket/pid
+  def start_ephemeral do
+    {:ok, listen_socket} =
+      :gen_tcp.listen(0, [:binary, packet: 0, active: false, reuseaddr: true])
+
+    {:ok, {_ip, port}} = :inet.sockname(listen_socket)
+    spawn(fn -> loop_acceptor(listen_socket) end)
+    {:ok, port, listen_socket}
+  end
+
   defp loop_acceptor(listen_socket) do
     {:ok, client_socket} = :gen_tcp.accept(listen_socket)
     spawn(fn -> handle_client(client_socket) end)
@@ -20,26 +30,26 @@ defmodule ErlangSandbox.Server do
   defp handle_client(socket) do
     case :gen_tcp.recv(socket, 0) do
       {:ok, data} ->
-          case Jason.decode(data) do
-            {:ok, %{"op" => "compile", "code" => code}} ->
-              case handle_erlang_code(code) do
-                {:ok, response} ->
-                  send_json(socket, %{status: "ok", result: to_string_response({:ok, response})})
-                {:error, reason} ->
-                  send_json(socket, %{status: "error", reason: to_string_response({:error, reason})})
-              end
+        case Jason.decode(data) do
+          {:ok, %{"op" => "compile", "code" => code}} ->
+            case handle_erlang_code(code) do
+              {:ok, response} ->
+                send_json(socket, %{status: "ok", result: to_string_response({:ok, response})})
+              {:error, reason} ->
+                send_json(socket, %{status: "error", reason: to_string_response({:error, reason})})
+            end
 
-            {:ok, %{"op" => "test", "code" => code, "cases" => cases}} ->
-              case run_tests(code, cases) do
-                {:ok, output, test_results} ->
-                  send_json(socket, %{status: "ok", result: to_string_response({:ok, output}), test_results: test_results})
-                {:error, reason} ->
-                  send_json(socket, %{status: "error", reason: to_string_response({:error, reason})})
-              end
+          {:ok, %{"op" => "test", "code" => code, "cases" => cases}} ->
+            case run_tests(code, cases) do
+              {:ok, output, test_results} ->
+                send_json(socket, %{status: "ok", result: to_string_response({:ok, output}), test_results: test_results})
+              {:error, reason} ->
+                send_json(socket, %{status: "error", reason: to_string_response({:error, reason})})
+            end
 
-            {:error, reason} ->
-             send_json(socket, %{status: "error", reason: to_string_response({:error, reason})})
-          end
+          {:error, reason} ->
+            send_json(socket, %{status: "error", reason: to_string_response({:error, reason})})
+        end
 
       {:error, reason} ->
         IO.puts(to_string_response({:error, reason}))
