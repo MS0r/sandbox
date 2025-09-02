@@ -4,14 +4,20 @@ defmodule ErlangSandbox.ServerTest do
   use ExUnit.Case
   import ExUnit.CaptureLog
 
-  test "server responds to compile requests with ok or error" do
+  setup do
+    {:ok, port, pid} = ErlangSandbox.Server.start_ephemeral()
+    on_exit(fn -> Process.exit(pid, :kill) end)
+    {:ok, port: port, pid: pid}
+  end
+
+  test "server responds to compile requests with ok or error", %{port: port, pid: pid} do
     capture_log(fn ->
-      {:ok, port, listen_socket} = ErlangSandbox.Server.start_ephemeral()
+      send(pid, :accept)
 
       {:ok, sock} =
         :gen_tcp.connect(~c'127.0.0.1', port, [:binary,{:packet, 0}, active: false, packet: 0], 2000)
 
-      # valid Erlang code -> compile path (may produce output)
+
       code = """
       -module(test_serv).
       -export([start/0]).
@@ -22,15 +28,15 @@ defmodule ErlangSandbox.ServerTest do
       {:ok, resp_bin} = :gen_tcp.recv(sock, 0, 2000)
       resp = Jason.decode!(resp_bin)
       assert resp["status"] in ["ok", "error"]
-
+      assert resp["result"] == "hello_server\n"
       :gen_tcp.close(sock)
-      :gen_tcp.close(listen_socket)
     end)
   end
 
-  test "server returns error for invalid erlang source" do
+  test "server returns error for invalid erlang source", %{port: port, pid: pid} do
     capture_log(fn ->
-      {:ok, port, listen_socket} = ErlangSandbox.Server.start_ephemeral()
+
+      send(pid, :accept)
 
       {:ok, sock} =
         :gen_tcp.connect(~c'127.0.0.1', port, [:binary,{:packet, 0}, active: false, packet: 0], 2000)
@@ -43,7 +49,6 @@ defmodule ErlangSandbox.ServerTest do
       assert is_binary(resp["reason"]) or is_map(resp["reason"])
 
       :gen_tcp.close(sock)
-      :gen_tcp.close(listen_socket)
     end)
   end
 end

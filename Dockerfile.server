@@ -1,18 +1,15 @@
-FROM elixir:latest
-
-RUN apt-get update && apt install -y make sudo &&\
-    apt clean && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /erlang_sandbox
-
-COPY /erlang_sandbox .
-
+FROM elixir:1.18-alpine AS builder
+WORKDIR /app
+COPY erlang_sandbox/mix.exs erlang_sandbox/mix.lock ./
+COPY erlang_sandbox/config ./config
 RUN mix local.hex --force && \
     mix local.rebar --force && \
-    mix deps.get
+    mix deps.get --only prod
+COPY erlang_sandbox/lib ./lib
+RUN MIX_ENV=prod mix release
 
-RUN mix deps.compile && mix compile
-
+FROM elixir:1.18-alpine AS prod
+WORKDIR /app
+COPY --from=builder /app/_build/prod/rel/erlang_sandbox ./
 EXPOSE 4000
-
-CMD ["mix", "run", "--no-halt"]
+CMD ["bin/erlang_sandbox", "start"]
