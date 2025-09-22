@@ -17,9 +17,6 @@ defmodule ErlangSandbox.Erlang do
 
         {:error, :unexpected_end_of_input, bad_tokens} ->
           {:error, {:unexpected_end_of_input, bad_tokens}}
-
-        {:error, _} = err ->
-          err
       end
     end
 
@@ -54,9 +51,6 @@ defmodule ErlangSandbox.Erlang do
           {:error, [{[], errors}], _warnings} ->
             {:error, errors}
 
-          {:error, reason} ->
-            {:error, reason}
-
           :error ->
             {:error,
             "Compilation failed: unknown error (possibly a semantic error such as unbound variable, type error, or similar). Please check your code."}
@@ -64,7 +58,6 @@ defmodule ErlangSandbox.Erlang do
       else
         {:error, reason, _} -> {:error, reason}
         {:error, _} = error -> error
-        other -> {:error, other}
       end
     end
 

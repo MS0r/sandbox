@@ -9,7 +9,9 @@ defmodule ErlangSandboxTest do
     start() -> io:format("hello_erlang~n").
     """
 
-    assert {:ok, module} = ErlangSandbox.Erlang.Loader.compile_and_load_erlang_module(erlang_source)
+    assert {:ok, module} =
+             ErlangSandbox.Erlang.Loader.compile_and_load_erlang_module(erlang_source)
+
     assert is_atom(module)
 
     # run_module/1 returns a tuple where the second element is the captured output
@@ -20,7 +22,9 @@ defmodule ErlangSandboxTest do
 
   test "compile_and_load_erlang_module returns error for invalid erlang source" do
     invalid_source = "this is not erlang."
-    assert {:error, _reason} = ErlangSandbox.Erlang.Loader.compile_and_load_erlang_module(invalid_source)
+
+    assert {:error, _reason} =
+             ErlangSandbox.Erlang.Loader.compile_and_load_erlang_module(invalid_source)
   end
 
   test "handle_erlang_code returns error for runtime error in erlang module" do
@@ -77,9 +81,7 @@ defmodule ErlangSandboxTest do
 
   test "erl_scan illegal type is formatted" do
     res =
-      ErlangSandbox.HandleError.to_string_response(
-        {:error, {2, :erl_scan, {:illegal, :dot}}}
-      )
+      ErlangSandbox.HandleError.to_string_response({:error, {2, :erl_scan, {:illegal, :dot}}})
 
     assert res =~ "illegal"
     assert res =~ "dot"
@@ -88,9 +90,7 @@ defmodule ErlangSandboxTest do
 
   test "erl_scan base error is formatted" do
     res =
-      ErlangSandbox.HandleError.to_string_response(
-        {:error, {3, :erl_scan, {:base, ~c'16'}}}
-      )
+      ErlangSandbox.HandleError.to_string_response({:error, {3, :erl_scan, {:base, ~c'16'}}})
 
     assert res =~ "illegal base"
     assert res =~ "in line 3"
@@ -115,8 +115,59 @@ defmodule ErlangSandboxTest do
   end
 
   test "erl_scan unterminated character (two-arity) is formatted" do
-    res = ErlangSandbox.HandleError.to_string_response({:error, {7, :erl_scan, {:unterminated, ?a}}})
+    res =
+      ErlangSandbox.HandleError.to_string_response({:error, {7, :erl_scan, {:unterminated, ?a}}})
+
     assert res =~ "unterminated character" or res =~ "unterminated"
     assert res =~ "in line 7"
+  end
+
+  test "unexpected_end_of_input is formatted" do
+    res =
+      ErlangSandbox.HandleError.to_string_response(
+        {:error, {:unexpected_end_of_input, [{8, :token}]}}
+      )
+
+    assert res =~ "unexpected end of input"
+    assert res =~ "8"
+  end
+
+  test "erl_lint single error is formatted" do
+    res = ErlangSandbox.HandleError.to_string_response({:error, {1, :erl_lint, :undefined_module}})
+    assert res =~ "module"
+    assert res =~ "in line 1"
+  end
+
+  test "erl_lint list of errors is formatted" do
+    desc1 = {:unused_function,{:start,0}}
+    desc2 = {:unbound_var,:X}
+    res = ErlangSandbox.HandleError.to_string_response({:error, [{1, :erl_lint, desc1}, {3, :erl_lint, desc2}]})
+    assert res =~ "unused"
+    assert res =~ "start"
+    assert res =~ "0"
+    assert res =~ "unbound"
+    assert res =~ "X"
+    assert res =~ "in line 3"
+  end
+
+  test "charlist error is formatted" do
+    res = ErlangSandbox.HandleError.to_string_response({:error, ~c'some error'})
+    assert res =~ "some error"
+  end
+
+  test "list of charlists is formatted" do
+    res = ErlangSandbox.HandleError.to_string_response({:error, [~c'hello', ~c'world']})
+    assert res =~ "hello world"
+  end
+
+  test "list of unknown format is formatted via inspect" do
+    res = ErlangSandbox.HandleError.to_string_response({:error, [{:foo, :bar}]})
+    assert res =~ "foo"
+    assert res =~ "bar"
+  end
+
+  test "generic error message is formatted" do
+    res = ErlangSandbox.HandleError.to_string_response({:error, "simple string"})
+    assert res =~ "simple string"
   end
 end

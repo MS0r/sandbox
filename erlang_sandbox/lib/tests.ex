@@ -5,18 +5,18 @@ defmodule ErlangSandbox.Tests do
     case compile_and_load_erlang_module(source_code) do
       {:ok, _module} ->
         ExUnit.start()
-        case Code.compile_string(cases) do
-          [{mod, _bin} | _] ->
-            try do
-              run_module({:test, mod})
-            rescue
-              e in RuntimeError -> {:error, e.message}
-            end
-          [] ->
-            {:error, "No module compiled from test cases"}
 
-          other ->
-            {:error, other}
+        try do
+          case Code.compile_string(cases) do
+            [{mod, _bin} | _] ->
+              run_module({:test, mod})
+
+            [] ->
+              {:error, "No module compiled from test cases"}
+          end
+        rescue
+          e in RuntimeError -> {:error, e.message}
+          e in CompileError -> {:error, e.description}
         end
 
       {:error, reason} ->

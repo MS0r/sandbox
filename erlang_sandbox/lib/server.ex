@@ -10,6 +10,7 @@ defmodule ErlangSandbox.Server do
   def start_ephemeral do
     {:ok, pid} = GenServer.start_link(__MODULE__, {0, false})
     port = GenServer.call(pid, :get_port)
+    send(pid, :accept)
     {:ok, port, pid}
   end
 
@@ -67,8 +68,7 @@ defmodule ErlangSandbox.Server do
             })
         end
 
-      {:error, reason} ->
-        IO.puts(to_string_response({:error, reason}))
+      {:error, _reason} ->
         :gen_tcp.close(socket)
     end
   end

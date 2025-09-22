@@ -26,26 +26,23 @@ defmodule ErlangSandbox.TestsTest do
   end
 
   test "runs test cases that call compiled erlang module" do
-    erlang_source = """
-    -module(test_run_mod).
-    -export([start/0]).
-    start() -> io:format("hello_from_erlang~n"), ok.
-    """
+    erlang_source = "-module(test). -export([sum/2]). sum(A, B) -> A + B."
 
     cases = """
-    defmodule TestCasesRunSuccess do
-      def run do
-        :test_run_mod.start()
-        :ok
+    defmodule Test do
+      use ExUnit.Case
+
+      test "sum" do
+        assert :test.sum(1, 1) == 2
       end
     end
     """
 
     capture_log(fn ->
-      assert {:ok, output, test_results} = ErlangSandbox.Tests.run_tests(erlang_source, cases)
+      {:ok, output, test_results} = ErlangSandbox.Tests.run_tests(erlang_source, cases)
       assert is_binary(output)
-      assert output =~ "Running ExUnit with seed"
-      assert is_map(test_results) or is_list(test_results)
+      assert is_map(test_results)
+      assert test_results[:failures] == 0
     end)
   end
 end
