@@ -16,7 +16,8 @@ RUN apk add --no-cache \
     openssl \
     zlib \
     libstdc++ \
-    libgcc
+    libgcc \
+    netcat-openbsd
 
 COPY --from=builder /app/_build/prod/rel/erlang_sandbox ./
 EXPOSE 4000
