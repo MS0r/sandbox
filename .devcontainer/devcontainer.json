@@ -5,7 +5,7 @@
 		"../docker-compose.dev.yml"
 	],
 
-	"service": "app-dev",
+	"service": "sandbox-dev",
 
 	"workspaceFolder": "/workspace",
 
@@ -29,5 +29,6 @@
 			]
 		}
 	},
-	"remoteUser": "vscode"
+	"remoteUser": "vscode",
+	"postCreateCommand": "cd erlang_sandbox && mix deps.get"
 }
