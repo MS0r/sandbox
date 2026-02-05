@@ -36,6 +36,7 @@ defmodule ErlangSandbox.MixProject do
     [
       {:jason, "~> 1.4"},
       {:excoveralls, "~> 0.16", only: :test},
+      {:meck, "~> 0.9", only: :test},
       {:amqp, "~> 4.1"},
       {:dotenvy, "~> 1.1.1"}
       # {:dep_from_hexpm, "~> 0.3.0"},
