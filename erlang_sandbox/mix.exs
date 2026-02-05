@@ -5,8 +5,8 @@ defmodule ErlangSandbox.MixProject do
     [
       app: :erlang_sandbox,
       version: "0.1.0",
-      elixir: "~> 1.18",
-      start_permanent: Mix.env() == :prod,
+      elixir: "~> 1.19",
+      start_permanent: Mix.env() == :dev,
       deps: deps(),
       releases: [
         erlang_sandbox: [
@@ -26,7 +26,7 @@ defmodule ErlangSandbox.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      applications: [:logger, :ex_unit, :amqp],
+      extra_applications: [:logger, :ex_unit],
       mod: {ErlangSandbox.Application, []}
     ]
   end
@@ -36,7 +36,8 @@ defmodule ErlangSandbox.MixProject do
     [
       {:jason, "~> 1.4"},
       {:excoveralls, "~> 0.16", only: :test},
-      {:amqp, "~> 4.1"}
+      {:amqp, "~> 4.1"},
+      {:dotenvy, "~> 1.1.1"}
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]

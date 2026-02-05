@@ -1,9 +1,7 @@
-# config/config.exs
 import Config
 
-config :erlang_sandbox,
-  # default TCP port (can be overridden per environment)
-  port: 4000
+config :logger, :default_formatter,
+  format: "$time $metadata[$level] $message\n",
+  metadata: [:file, :line]
 
-# JSON library
-config :jason, :decode, keys: :atoms
+import_config("#{config_env()}.exs")

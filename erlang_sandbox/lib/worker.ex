@@ -1,22 +1,25 @@
 defmodule ErlangSandbox.Worker do
   use GenServer
   use AMQP
+  require Logger
   import ErlangSandbox.HandleError, only: [to_string_response: 1]
   import ErlangSandbox.ClientHandler, only: [handle_request: 1]
 
-  def start_link(broker_port \\ 5672) do
+  def start_link(broker_port) do
     GenServer.start_link(__MODULE__, {broker_port}, name: __MODULE__)
   end
 
-  @queue       "rpc_queue"
+  @queue "rpc_queue"
   @queue_error "#{@queue}_error"
 
   def init({broker_port}) do
-    host = System.get_env("RABBITMQ_HOST")
-    user = System.get_env("RABBITMQ_DEFAULT_USER")
-    password = System.get_env("RABBITMQ_DEFAULT_PASS")
+    host = Application.get_env(:erlang_sandbox, :host)
+    user = Application.get_env(:erlang_sandbox, :user)
+    password = Application.get_env(:erlang_sandbox, :password)
 
+    Logger.debug("Connecting to RabbitMQ instance in host #{host} and port #{broker_port}")
     {:ok, conn} = Connection.open("amqp://#{user}:#{password}@#{host}:#{broker_port}")
+    Logger.debug("Succesful connection to RabbitMQ")
     {:ok, chan} = Channel.open(conn)
     setup_queue(chan)
 

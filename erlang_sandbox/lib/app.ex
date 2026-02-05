@@ -1,19 +1,22 @@
 defmodule ErlangSandbox.Application do
   use Application
+  require Logger
 
   def start(_type, _args) do
-    case Application.get_env(:erlang_sandbox, :env, :dev) do
+    case Application.get_env(:erlang_sandbox, :env) do
       :test ->
         # In test environment, just return the current process
+        Logger.info("Testing the service...")
         {:ok, self()}
 
-      _ ->
+      env ->
         # Read the configured port for dev or prod
-        port = Application.get_env(:erlang_sandbox, :port, 4000)
+        broker_port = Application.get_env(:erlang_sandbox, :port)
+        Logger.info("Starting the Sandbox service in #{env} environment")
 
         # Define children for the supervision tree
         children = [
-          {ErlangSandbox.Server, port}
+          {ErlangSandbox.Worker, broker_port}
         ]
 
         # Supervision options
