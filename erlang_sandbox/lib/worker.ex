@@ -25,26 +25,33 @@ defmodule ErlangSandbox.Worker do
 
     Basic.qos(chan, prefetch_count: 3)
     Basic.consume(chan, @queue)
+    Logger.debug("Set basic consume on queue #{@queue} with prefetch 3")
+    Logger.debug("Successfully initialize service. Waiting for messages...")
     wait_for_messages(chan)
   end
 
   def wait_for_messages(chan) do
     receive do
       {:basic_deliver, payload, meta} ->
+        Logger.debug("Message received from #{@queue}", metadata: meta)
         Task.start(fn -> handle_client(chan,meta,payload) end)
         wait_for_messages(chan)
     end
   end
 
   defp handle_client(chan, meta, payload) do
+    Logger.metadata(meta)
     case handle_request(Jason.decode(payload)) do
       {:ok, response} ->
+        Logger.info("Successful execution of request.")
         send_json(chan, meta, %{status: "ok", result: to_string_response({:ok, response})})
-
       {:error, reason} ->
-        send_json(chan, meta, %{status: "error", reason: to_string_response({:error, reason})})
+        res = to_string_response({:error, reason})
+        Logger.error("Error: #{res}.")
+        send_json(chan, meta, %{status: "error", reason: res})
 
       {:ok, output, test_results} ->
+        Logger.info("Successful testing of request.")
         send_json(chan, meta, %{
           status: "ok",
           result: to_string_response({:ok, output}),
@@ -56,6 +63,7 @@ defmodule ErlangSandbox.Worker do
 
   defp send_json(chan,meta,data) do
     json = Jason.encode!(data)
+    Logger.info("Publishing response to queue #{meta.reply_to}")
     Basic.publish(chan,
                        "",
                        meta.reply_to,
@@ -65,6 +73,7 @@ defmodule ErlangSandbox.Worker do
   end
 
   def setup_queue(chan) do
+    Logger.debug("Setting up rpc_queues")
     {:ok, _} = Queue.declare(chan,@queue_error, durable: true)
 
     {:ok, _} = Queue.declare(chan, @queue,
@@ -74,5 +83,6 @@ defmodule ErlangSandbox.Worker do
                                 {"x-dead-letter-routing-key", :longstr, @queue_error}
                              ]
                             )
+    Logger.debug("Queues successfully set up")
   end
 end

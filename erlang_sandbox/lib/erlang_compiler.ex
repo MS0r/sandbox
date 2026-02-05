@@ -1,4 +1,5 @@
 defmodule ErlangSandbox.Erlang do
+  require Logger
   defmodule Parser do
     def parse_all_forms(tokens), do: parse_forms(tokens, [])
 
@@ -37,6 +38,7 @@ defmodule ErlangSandbox.Erlang do
     import ErlangSandbox.Erlang.Parser, only: [parse_all_forms: 1]
 
     def compile_and_load_erlang_module(source_code) do
+      Logger.debug("Compiling code...")
       charlist = source_code |> String.trim() |> to_charlist()
 
       with {:ok, tokens, _} <- :erl_scan.string(charlist),
@@ -62,6 +64,7 @@ defmodule ErlangSandbox.Erlang do
     end
 
     def run_module({atom, module}) do
+      Logger.debug("Executing module")
       {:ok, io} = StringIO.open("")
       previous_leader = Process.group_leader()
 
@@ -111,6 +114,7 @@ defmodule ErlangSandbox.Erlang do
     def handle_erlang_code(source_code) do
       case compile_and_load_erlang_module(source_code) do
         {:ok, module} ->
+          Logger.debug("Successfully compiling")
           try do
             {_, output} = run_module({:run, module})
             {:ok, output}
