@@ -1,5 +1,5 @@
 services:
-  app:
+  sandbox:
     build:
       context: .
       dockerfile: Dockerfile.server
@@ -7,3 +7,15 @@ services:
     ports:
       - "4000:4000"
     tty: true
+    depends_on:
+      - broker
+  broker:
+    image: rabbitmq:4.2.3-management
+    hostname: my-rabbit
+    container_name: rabbit-for-sandbox
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}

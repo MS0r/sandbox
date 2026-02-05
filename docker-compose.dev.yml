@@ -9,6 +9,8 @@ services:
     ports:
       - "5555:4000"
     command: /bin/sh -c "while sleep 1000; do :; done"
+    depends_on:
+      - broker
     tty: true
   broker:
     image: rabbitmq:4.2.3-management
