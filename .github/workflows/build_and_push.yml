@@ -18,8 +18,8 @@ jobs:
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          otp-version: 28
-          elixir-version: 1.18
+          otp-version: 27
+          elixir-version: 1.19
 
       - name: Install dependencies
         run: cd erlang_sandbox && mix deps.get
