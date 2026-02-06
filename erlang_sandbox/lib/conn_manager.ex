@@ -37,7 +37,7 @@ defmodule ErlangSandbox.ConnectionManager do
   end
 
   def handle_info({:DOWN, _ref, :process, _pid, reason}, state) do
-    Logger.error("RabbitMQ connection lost: #{inspect(reason)}")
+    Logger.error("RabbitMQ connection close: #{inspect(reason)}")
     send(self(), :connect)
     {:noreply, %{state | connection: nil, channels: []}}
   end

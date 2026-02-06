@@ -17,13 +17,14 @@ defmodule ErlangSandbox.Application do
         # Define children for the supervision tree
         children = [
           {ErlangSandbox.ConnectionManager, broker_port},
+          ErlangSandbox.QueueManager,
           {ErlangSandbox.Worker, id: :worker_1},
           {ErlangSandbox.Worker, id: :worker_2},
           {ErlangSandbox.Worker, id: :worker_3}
         ]
 
         # Supervision options
-        opts = [strategy: :one_for_one, name: ErlangSandbox.Supervisor]
+        opts = [strategy: :rest_for_one, name: ErlangSandbox.Supervisor]
         Supervisor.start_link(children, opts)
     end
   end
