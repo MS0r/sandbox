@@ -16,7 +16,10 @@ defmodule ErlangSandbox.Application do
 
         # Define children for the supervision tree
         children = [
-          {ErlangSandbox.Worker, broker_port}
+          {ErlangSandbox.ConnectionManager, broker_port},
+          {ErlangSandbox.Worker, id: :worker_1},
+          {ErlangSandbox.Worker, id: :worker_2},
+          {ErlangSandbox.Worker, id: :worker_3}
         ]
 
         # Supervision options

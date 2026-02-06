@@ -3,7 +3,9 @@ defmodule ErlangSandbox.WorkerTest do
 
   setup do
     :meck.new(AMQP.Basic, [:non_strict])
-    :meck.new(ErlangSandbox.ClientHandler, [:non_strict])
+    :meck.new(AMQP.Queue, [:non_strict])
+    :meck.new(ErlangSandbox.ConnectionManager, [:non_strict])
+    :meck.new(ErlangSandbox.RequestHandler, [:non_strict])
 
     on_exit(fn ->
       :meck.unload()
@@ -12,10 +14,41 @@ defmodule ErlangSandbox.WorkerTest do
     :ok
   end
 
-  test "wait_for_messages delivers response and acks message" do
-    test_pid = self()
+  test "setup_channel connects and starts consuming" do
+    chan = %{pid: self()}
 
-    :meck.expect(ErlangSandbox.ClientHandler, :handle_request, fn {:ok, _payload} ->
+    :meck.expect(ErlangSandbox.ConnectionManager, :get_channel, fn ->
+      {:ok, chan}
+    end)
+
+    :meck.expect(AMQP.Queue, :declare, fn _chan, _queue, _opts ->
+      {:ok, :queue_declared}
+    end)
+
+    :meck.expect(AMQP.Basic, :qos, fn _chan, _opts -> :ok end)
+    :meck.expect(AMQP.Basic, :consume, fn _chan, _queue -> {:ok, :consumer_tag} end)
+
+    {:ok, pid} = ErlangSandbox.Worker.start_link([])
+
+    assert wait_for_channel(pid, chan)
+  end
+
+  test "basic_deliver publishes response and acks message" do
+    test_pid = self()
+    chan = %{pid: self()}
+
+    :meck.expect(ErlangSandbox.ConnectionManager, :get_channel, fn ->
+      {:ok, chan}
+    end)
+
+    :meck.expect(AMQP.Queue, :declare, fn _chan, _queue, _opts ->
+      {:ok, :queue_declared}
+    end)
+
+    :meck.expect(AMQP.Basic, :qos, fn _chan, _opts -> :ok end)
+    :meck.expect(AMQP.Basic, :consume, fn _chan, _queue -> {:ok, :consumer_tag} end)
+
+    :meck.expect(ErlangSandbox.RequestHandler, :handle_request, fn {:ok, _payload} ->
       {:ok, "worker_ok"}
     end)
 
@@ -29,7 +62,8 @@ defmodule ErlangSandbox.WorkerTest do
       :ok
     end)
 
-    worker_pid = spawn(fn -> ErlangSandbox.Worker.wait_for_messages(:fake_chan) end)
+    {:ok, worker_pid} = ErlangSandbox.Worker.start_link([])
+    assert wait_for_channel(worker_pid, chan)
 
     payload = Jason.encode!(%{"op" => "compile", "code" => "ok"})
     meta = %{delivery_tag: 123, reply_to: "reply_queue", correlation_id: "corr-id-1"}
@@ -48,7 +82,20 @@ defmodule ErlangSandbox.WorkerTest do
   require ErlangSandbox.Worker
   test "public api is exposed" do
     assert function_exported?(ErlangSandbox.Worker, :start_link, 1)
-    assert function_exported?(ErlangSandbox.Worker, :wait_for_messages, 1)
-    assert function_exported?(ErlangSandbox.Worker, :setup_queue, 1)
+    assert function_exported?(ErlangSandbox.Worker, :child_spec, 1)
+  end
+
+  defp wait_for_channel(pid, chan, attempts \\ 20)
+  defp wait_for_channel(_pid, _chan, 0), do: false
+
+  defp wait_for_channel(pid, chan, attempts) do
+    case :sys.get_state(pid) do
+      %{channel: ^chan} ->
+        true
+
+      _ ->
+        Process.sleep(10)
+        wait_for_channel(pid, chan, attempts - 1)
+    end
   end
 end
