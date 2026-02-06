@@ -15,5 +15,5 @@ and to compile and initialize the server you should use the following:
 
 ```bash
 # Depends on your environment
-MIX_ENV=(dev,test,prod) mix run
+MIX_ENV=(dev,test,prod) iex -S mix
 ```

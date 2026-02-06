@@ -43,8 +43,8 @@ defmodule ErlangSandbox.QueueManager do
     {:reply, :ok, state}
   end
 
-  def handle_call(:wait_for_setup, _from, %{setup_complete: false}) do
-    {:error, "Still on process..."}
+  def handle_call(:wait_for_setup, _from, %{setup_complete: false} = state) do
+    {:reply, {:error, "Still on process..."}, state}
   end
 
   defp retry_setup(count, state) do
