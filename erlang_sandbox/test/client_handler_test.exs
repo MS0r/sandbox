@@ -1,4 +1,4 @@
-defmodule ErlangSandbox.ClientHandlerTest do
+defmodule ErlangSandbox.RequestHandlerTest do
   use ExUnit.Case
   import ExUnit.CaptureLog
 
@@ -11,7 +11,7 @@ defmodule ErlangSandbox.ClientHandlerTest do
 
     capture_log(fn ->
       assert {:ok, output} =
-               ErlangSandbox.ClientHandler.handle_request({:ok, %{"op" => "compile", "code" => code}})
+               ErlangSandbox.RequestHandler.handle_request({:ok, %{"op" => "compile", "code" => code}})
 
       assert output =~ "client_ok"
     end)
@@ -26,7 +26,7 @@ defmodule ErlangSandbox.ClientHandlerTest do
 
     capture_log(fn ->
       assert {:error, output} =
-               ErlangSandbox.ClientHandler.handle_request({:ok, %{"op" => "compile", "code" => code}})
+               ErlangSandbox.RequestHandler.handle_request({:ok, %{"op" => "compile", "code" => code}})
 
       assert is_tuple(output)
       ls = Tuple.to_list(output)
@@ -43,7 +43,7 @@ defmodule ErlangSandbox.ClientHandlerTest do
 
     capture_log(fn ->
       assert {:error, output} =
-               ErlangSandbox.ClientHandler.handle_request({:ok, %{"op" => "compile", "code" => code}})
+               ErlangSandbox.RequestHandler.handle_request({:ok, %{"op" => "compile", "code" => code}})
 
       assert is_list(output)
       ls = Tuple.to_list(Enum.at(output,0))
@@ -59,7 +59,7 @@ defmodule ErlangSandbox.ClientHandlerTest do
     """
 
     cases = """
-    defmodule ClientHandlerTestCases1 do
+    defmodule RequestHandlerTestCases1 do
       use ExUnit.Case
 
       test "sum" do
@@ -70,7 +70,7 @@ defmodule ErlangSandbox.ClientHandlerTest do
 
     capture_log(fn ->
       assert {:ok, _output, results} =
-               ErlangSandbox.ClientHandler.handle_request(
+               ErlangSandbox.RequestHandler.handle_request(
                  {:ok, %{"op" => "test", "code" => code, "cases" => cases}}
                )
 
@@ -87,7 +87,7 @@ defmodule ErlangSandbox.ClientHandlerTest do
     """
 
     cases = """
-    defmodule ClientHandlerTestCases2 do
+    defmodule RequestHandlerTestCases2 do
       use ExUnit.Case
 
       test "sum" do
@@ -98,7 +98,7 @@ defmodule ErlangSandbox.ClientHandlerTest do
 
     capture_log(fn ->
       assert {:ok, _output, results} =
-               ErlangSandbox.ClientHandler.handle_request(
+               ErlangSandbox.RequestHandler.handle_request(
                  {:ok, %{"op" => "test", "code" => code, "cases" => cases}}
                )
 
@@ -110,6 +110,6 @@ defmodule ErlangSandbox.ClientHandlerTest do
 
   test "handle_request returns error for malformed payload" do
     assert {:error, "Payload malformed"} =
-             ErlangSandbox.ClientHandler.handle_request({:ok, %{"foo" => "bar"}})
+             ErlangSandbox.RequestHandler.handle_request({:ok, %{"foo" => "bar"}})
   end
 end

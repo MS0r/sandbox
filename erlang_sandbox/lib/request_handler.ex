@@ -1,4 +1,4 @@
-defmodule ErlangSandbox.ClientHandler do
+defmodule ErlangSandbox.RequestHandler do
   require Logger
   import ErlangSandbox.Erlang.Loader, only: [handle_erlang_code: 1]
   import ErlangSandbox.Tests, only: [run_tests: 2]

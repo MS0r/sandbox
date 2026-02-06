@@ -8,7 +8,11 @@ services:
       - "4000:4000"
     tty: true
     depends_on:
-      - broker
+      - broker    
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
   broker:
     image: rabbitmq:4.2.3-management
     hostname: my-rabbit
