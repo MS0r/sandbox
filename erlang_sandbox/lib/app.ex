@@ -20,7 +20,8 @@ defmodule ErlangSandbox.Application do
           ErlangSandbox.QueueManager,
           {ErlangSandbox.Worker, id: :worker_1},
           {ErlangSandbox.Worker, id: :worker_2},
-          {ErlangSandbox.Worker, id: :worker_3}
+          {ErlangSandbox.Worker, id: :worker_3},
+          ErlangSandbox.HealthServer
         ]
 
         # Supervision options
